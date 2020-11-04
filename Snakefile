@@ -1,3 +1,4 @@
+import os
 IDS = ["Adl_Ss-w", "Dra_Ss-w", "Enn_Ss-w", "Gau_Ss-w"]
 Assembler = ["norgal", "MitoZ", "MitoFlex", "GetOrganelle", "Novoplasty", "MITObim"]
 
@@ -93,11 +94,15 @@ rule mitofelx:
     output:
         "assemblies/{assembler}/Ecr_{id}/Ecr_{id}.picked.fa"
     params:
-        outdir = "assemblies/{assembler}/Ecr_{id}/"
+        outdir = "assemblies/{assembler}/Ecr_{id}/",
+        id = "{id}"
     conda:
         "envs/mitoflex.yml"
     shell:
-        "scripts/MitoFlex.py all --workname Ecr_{id} --threads 8 --insert-size 167 --fastq1 {input.f} --fastq2 {input.r} --genetic-code 14 --clade Platyhelminthes 1>m.log 2>m.err"
+        """
+        scripts/ncbi.py
+        scripts/MitoFlex.py all --workname Ecr_{params.id} --threads 8 --insert-size 167 --fastq1 {input.f} --fastq2 {input.r} --genetic-code 14 --clade Platyhelminthes 1>m.log 2>m.err"
+        """
 
 #rule NOVOplasty:
 #    input:
@@ -126,12 +131,17 @@ rule MITObim:
     output:
         "assemblies/{assembler}/Ecr_{id}/Ecr_{id}_{assembler}.fasta"
     params:
-        id = "{id}"
+        id = "{id}",
+        assembler = "{assembler}",
+        wd = os.getcwd()
     singularity:
         "docker://chrishah/mitobim:v.1.9.1"
     shell:
-        "scripts/MITObim.pl -sample Ecr_{params.id} -ref Diphyllobothrium_stemmacephalum_mtgenome -readpool trimmed/{params.id}_interleaved_trim.fastq --quick seeds/Diphyllobothrium_stemmacephalum_mtgenome_NC_035881.1.fasta -end 100 --denovo --paired --clean --NFS_warn_only &> log"
-         
+        """
+        cd assemblies/{params.assembler}/Ecr_{params.id}
+        MITObim.pl -sample Ecr_{params.id} -ref Diphyllobothrium_stemmacephalum_mtgenome -readpool {params.wd}/{input} --quick {params.wd}/seeds/Diphyllobothrium_stemmacephalum_mtgenome_NC_035881.1.fasta -end 100 --denovo --paired --clean --NFS_warn_only &> log
+        ln -s $(find ./ -name "*noIUPAC.fasta") {params.wd}/{output}       
+        """ 
 
 rule quast:
     input:
