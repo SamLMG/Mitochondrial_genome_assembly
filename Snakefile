@@ -136,11 +136,11 @@ rule MITObim:
         wd = os.getcwd()
     singularity:
         "docker://chrishah/mitobim:v.1.9.1"
+    shadow: "shallow"
     shell:
         """
-        cd assemblies/{params.assembler}/Ecr_{params.id}
-        MITObim.pl -sample Ecr_{params.id} -ref Diphyllobothrium_stemmacephalum_mtgenome -readpool {params.wd}/{input} --quick {params.wd}/seeds/Diphyllobothrium_stemmacephalum_mtgenome_NC_035881.1.fasta -end 100 --denovo --paired --clean --NFS_warn_only &> log
-        ln -s $(find ./ -name "*noIUPAC.fasta") {params.wd}/{output}       
+        MITObim.pl -sample Ecr_{params.id} -ref Diphyllobothrium_stemmacephalum_mtgenome -readpool {input} --quick seeds/Diphyllobothrium_stemmacephalum_mtgenome_NC_035881.1.fasta -end 100 --denovo --paired --clean --NFS_warn_only &> log
+        cp $(find ./ -name "*noIUPAC.fasta") {output}       
         """ 
 
 rule quast:
